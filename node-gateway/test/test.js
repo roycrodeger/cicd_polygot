@@ -2,7 +2,7 @@ const request = require('supertest');
 const { expect } = require('chai');
 
 // We need to import the app and start it for testing
-const app = require('../index');
+const app = require('../app');
 
 describe('Gateway Service', () => {
   it('should return status on /gateway/status', (done) => {
