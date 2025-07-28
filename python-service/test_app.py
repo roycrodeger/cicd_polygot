@@ -12,5 +12,5 @@ def test_get_data(client):
     response = client.get('/api/data')
     assert response.status_code == 200
     json_data = response.get_json()
-    assert json_data['service'] == 'python-api'
+    assert json_data['service'] == 'python-service'
     assert 'data' in json_data
