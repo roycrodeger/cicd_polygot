@@ -1,0 +1,129 @@
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-python-api:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      working-directory: ./python-api
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 pytest
+
+    - name: Lint with flake8
+      working-directory: ./python-api
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      working-directory: ./python-api
+      run: pytest
+
+    - name: Log in to Docker Hub
+      if: github.event_name == 'push' # Only push on merge to main
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      if: github.event_name == 'push'
+      uses: docker/build-push-action@v4
+      with:
+        context: ./python-api
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/python-api:${{ github.sha }}
+
+  build-node-gateway:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: ./nodejs-gateway
+      run: npm install
+
+    - name: Lint with ESLint
+      working-directory: ./nodejs-gateway
+      run: npm run lint
+
+    - name: Test with Mocha
+      working-directory: ./nodejs-gateway
+      run: npm test
+
+    - name: Log in to Docker Hub
+      if: github.event_name == 'push'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      if: github.event_name == 'push'
+      uses: docker/build-push-action@v4
+      with:
+        context: ./nodejs-gateway
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/nodejs-gateway:${{ github.sha }}
+
+  build-go-service:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.19'
+
+    - name: Initialize Go module
+      working-directory: ./go-service
+      run: go mod init go-service && go mod tidy
+
+    - name: Lint with golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        working-directory: ./go-service
+        version: v1.50
+
+    - name: Test with go test
+      working-directory: ./go-service
+      run: go test -v ./...
+
+    - name: Log in to Docker Hub
+      if: github.event_name == 'push'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      if: github.event_name == 'push'
+      uses: docker/build-push-action@v4
+      with:
+        context: ./go-service
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-service:${{ github.sha }}
