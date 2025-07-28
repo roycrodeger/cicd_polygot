@@ -17,14 +17,14 @@ jobs:
         python-version: '3.9'
 
     - name: Install dependencies
-      working-directory: ./python-api
+      working-directory: ./python-service
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install flake8 pytest
 
     - name: Lint with flake8
-      working-directory: ./python-api
+      working-directory: ./python-service
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -32,7 +32,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest
-      working-directory: ./python-api
+      working-directory: ./python-service
       run: pytest
 
     - name: Log in to Docker Hub
@@ -46,7 +46,7 @@ jobs:
       if: github.event_name == 'push'
       uses: docker/build-push-action@v4
       with:
-        context: ./python-api
+        context: ./python-service
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/python-api:${{ github.sha }}
 
@@ -62,15 +62,15 @@ jobs:
         node-version: '18'
 
     - name: Install dependencies
-      working-directory: ./nodejs-gateway
+      working-directory: ./node-gateway
       run: npm install
 
     - name: Lint with ESLint
-      working-directory: ./nodejs-gateway
+      working-directory: ./node-gateway
       run: npm run lint
 
     - name: Test with Mocha
-      working-directory: ./nodejs-gateway
+      working-directory: ./node-gateway
       run: npm test
 
     - name: Log in to Docker Hub
@@ -84,9 +84,9 @@ jobs:
       if: github.event_name == 'push'
       uses: docker/build-push-action@v4
       with:
-        context: ./nodejs-gateway
+        context: ./node-gateway
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/nodejs-gateway:${{ github.sha }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/node-gateway:${{ github.sha }}
 
   build-go-service:
     runs-on: ubuntu-latest
